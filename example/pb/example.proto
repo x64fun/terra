@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/x64fun/terra/example/pb";
+
+import "google/api/annotations.proto";
+
+service Example {
+    // 健康检查
+    rpc Hello(stream HelloRequest) returns (HelloResponse) {
+        option (google.api.http) = {
+            get : "/hello"
+        };
+    };
+}
+
+message HelloRequest {
+    string name = 1;
+}
+message HelloResponse {
+    string reply = 1;
+}
