@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package go.jmoiron.sqlx;
+
+option go_package = "github.com/x64fun/terra/pkg/protofile/sqlx";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    DBField db_field = 82295600;
+}
+extend google.protobuf.MessageOptions {
+    DBTable db_table = 82295601;
+}
+
+message DBField {
+    string db = 1;               // 字段映射
+    bool insert = 2;             // 插入时填入
+    DBFieldDefault insert_default = 3;   // 插入时默认值
+    repeated string update = 4;  // 根据 Key 更新时填入
+    DBFieldDefault update_default = 5;   // 根据 Key 更新时默认值
+    repeated string delete = 6;  // 根据 Key 删除时填入
+    repeated string replace = 7; // 根据 Key 替换时填入
+    repeated string one = 8;     // 根据 Key 查询单个时填入
+    repeated string list = 9;    // 根据 Key 查询列表时填入
+}
+
+message DBTable {                // 为空表示不生成
+    string name = 1;             // 表名
+    repeated string update = 2;  // 根据 Key 更新时填入
+    repeated string delete = 3;  // 根据 Key 删除时填入
+    repeated string replace = 4; // 替换
+    repeated string one = 5;     // 根据 Key 查询单个时填入
+    repeated string list = 6;    // 根据 Key 查询列表时填入
+}
+
+message DBFieldDefault {
+    
+}

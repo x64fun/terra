@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package go.kit;
+
+option go_package = "github.com/x64fun/terra/pkg/protofile/kit";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    FieldType type = 82295500; // 字段类型 "github.com/google/uuid.UUID"
+}
+
+message FieldType {
+    string go_pkg = 1;
+    string go_type = 2;
+}
+
+// ConvertToProtoMessage(pb.Message)
+// ConvertProtoMessageToXX()

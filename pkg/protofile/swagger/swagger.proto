@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package go.swagger;
+
+option go_package = "github.com/x64fun/terra/pkg/protofile/swagger";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MethodOptions {
+    Swagger swagger = 82295700;
+}
+
+message Swagger {
+    string summary = 1;
+    string description = 2;
+    string tags = 3;
+    string accept = 4;
+    string produce = 5;
+    repeated string param = 6;
+    string success = 7;
+    string router = 8;
+}

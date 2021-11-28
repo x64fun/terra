@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package go.gorilla.mux;
+
+option go_package = "github.com/x64fun/terra/pkg/protofile/mux";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.MethodOptions {
+    Router router = 82295800;
+}
+
+enum HTTPMethod {
+    GET = 0;
+    HEAD = 1;
+    POST = 2;
+    PUT = 3;
+    PATCH = 4;
+    DELETE = 5;
+    CONNECT = 6;
+    OPTIONS = 7;
+    TRACE = 8;
+}
+enum HTTPScheme {
+    HTTP = 0;
+    HTTPS = 1;
+}
+
+message Router {
+    string host = 1;
+    string path = 2;
+    string path_prefix = 3;
+    repeated HTTPMethod methods = 4;
+    repeated string headers = 5;
+    repeated string queries = 6;
+    repeated HTTPScheme schemes = 7;
+    bool skip_clean = 8;
+    bool strict_slash = 9;
+    bool use_encoded_path = 10;
+}
