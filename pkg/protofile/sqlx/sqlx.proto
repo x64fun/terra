@@ -35,5 +35,6 @@ message DBTable {                // 为空表示不生成
 }
 
 message DBFieldDefault {
-    
+    string go_pkg = 1;
+    string go_value = 2;
 }
