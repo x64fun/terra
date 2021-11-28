@@ -1,2 +1,7 @@
 .vscode
+.clang-format
+Makefile
 build
+example/pb
+example/test
+example/main.go
