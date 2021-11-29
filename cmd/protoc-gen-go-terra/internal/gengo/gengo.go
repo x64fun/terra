@@ -170,6 +170,6 @@ func getMethodOptionMuxRouter(m *protogen.Method) *mux.Router {
 	return mux.E_Router.InterfaceOf(option).(*mux.Router)
 }
 func getMethodOptionSwagger(m *protogen.Method) *swagger.Swagger {
-	option := getMethodOptions(m).Get(swagger.E_Swagger.TypeDescriptor())
-	return swagger.E_Swagger.InterfaceOf(option).(*swagger.Swagger)
+	option := getMethodOptions(m).Get(swagger.E_Comment.TypeDescriptor())
+	return swagger.E_Comment.InterfaceOf(option).(*swagger.Swagger)
 }

@@ -1,13 +1,13 @@
 syntax = "proto3";
 
-package go.swagger;
+package go.terra.swagger;
 
 option go_package = "github.com/x64fun/terra/pkg/protofile/swagger";
 
 import "google/protobuf/descriptor.proto";
 
 extend google.protobuf.MethodOptions {
-    Swagger swagger = 82295700;
+    Swagger comment = 82295700;
 }
 
 message Swagger {

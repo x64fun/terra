@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package go.kit;
+package go.terra.kit;
 
 option go_package = "github.com/x64fun/terra/pkg/protofile/kit";
 
@@ -14,6 +14,3 @@ message FieldType {
     string go_pkg = 1;
     string go_type = 2;
 }
-
-// ConvertToProtoMessage(pb.Message)
-// ConvertProtoMessageToXX()

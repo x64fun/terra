@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package go.kit;
+package go.terra.kit;
 
 option go_package = "github.com/x64fun/terra/pkg/protofile/kit";
 
