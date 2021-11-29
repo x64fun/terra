@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/x64fun/terra/pkg/protofile/kit"
-	"github.com/x64fun/terra/pkg/protofile/sqlx"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -30,12 +29,11 @@ func (gen Generator) GenerateStruct(file *protogen.File) *protogen.GeneratedFile
 func (gen Generator) generateMessage(g *protogen.GeneratedFile, f *protogen.File, m *protogen.Message) {
 	g.P("type ", m.GoIdent.GoName, " struct {")
 	for _, field := range m.Fields {
-		typeOption := field.Desc.Options().ProtoReflect().Get(kit.E_Type.TypeDescriptor())
-		_type := kit.E_Type.InterfaceOf(typeOption).(*kit.FieldType)
-		tagOption := field.Desc.Options().ProtoReflect().Get(kit.E_Tag.TypeDescriptor())
-		_tag := kit.E_Tag.InterfaceOf(tagOption).(*kit.StructTag)
-		dbFieldOption := field.Desc.Options().ProtoReflect().Get(sqlx.E_DbField.TypeDescriptor())
-		_dbField := sqlx.E_DbField.InterfaceOf(dbFieldOption).(*sqlx.DBField)
+		_type := getFieldOptionKitFieldType(field)
+		_tag := getFieldOptionKitTag(field)
+		_dbField := getFieldOptionSqlxDBField(field)
+		_validatorRule := getFieldOptionValidator(field)
+		gen.l.Info(_validatorRule)
 		var printArgs []interface{}
 		printArgs = append(printArgs, field.GoName, " ")
 		if _type != nil {

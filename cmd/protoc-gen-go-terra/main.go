@@ -44,6 +44,9 @@ func main() {
 				g.GenerateDAOMySQL(f)
 				g.GenerateDAOPostgres(f)
 
+				// Mux
+				g.GenerateMux(f)
+
 				glog.V(1).Info("Processed code generator request")
 			}
 		}

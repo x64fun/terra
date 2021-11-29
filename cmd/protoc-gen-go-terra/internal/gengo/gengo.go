@@ -7,7 +7,10 @@ import (
 	"github.com/x64fun/terra/cmd/protoc-gen-go-terra/internal/version"
 	"github.com/x64fun/terra/internal/tool"
 	"github.com/x64fun/terra/pkg/protofile/kit"
+	"github.com/x64fun/terra/pkg/protofile/mux"
 	"github.com/x64fun/terra/pkg/protofile/sqlx"
+	"github.com/x64fun/terra/pkg/protofile/swagger"
+	"github.com/x64fun/terra/pkg/protofile/validator"
 	"google.golang.org/protobuf/compiler/protogen"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/pluginpb"
@@ -45,7 +48,7 @@ const (
 	strconvPackage = protogen.GoImportPath("strconv")
 )
 
-// go-kit library dependencies.
+// third_party library dependencies.
 const (
 	kitLogPackage      = protogen.GoImportPath("github.com/go-kit/log")
 	kitEndpointPackage = protogen.GoImportPath("github.com/go-kit/kit/endpoint")
@@ -54,16 +57,10 @@ const (
 
 	kitTransportHTTPPackage = protogen.GoImportPath("github.com/go-kit/kit/transport/http")
 	kitTransportGRPCPackage = protogen.GoImportPath("github.com/go-kit/kit/transport/grpc")
-)
 
-// sqlx library dependencies.
-const (
 	sqlxPackage = protogen.GoImportPath("github.com/jmoiron/sqlx")
-)
-
-// uuid library dependencies.
-const (
 	uuidPackage = protogen.GoImportPath("github.com/google/uuid")
+	muxPackage  = protogen.GoImportPath("github.com/gorilla/mux")
 )
 
 // library dependencies.
@@ -73,7 +70,6 @@ const (
 
 // 获取当前文件的引用路径 | 区别于protobuf默认路径
 func getCurrentImportPath(fileImportPath, filenamePrefix, importPath string) protogen.GoImportPath {
-
 	fileImportPath = strings.Trim(fileImportPath, `"`)
 	importPath = strings.Trim(importPath, `"`)
 	fileImportPathSplit := strings.Split(fileImportPath, "/")
@@ -84,7 +80,7 @@ func getCurrentImportPath(fileImportPath, filenamePrefix, importPath string) pro
 		}
 		importPathIndex++
 	}
-	if strings.Join(fileImportPathSplit[:len(fileImportPathSplit)-importPathIndex], "/") == "github.com" {
+	if strings.Join(fileImportPathSplit[:len(fileImportPathSplit)-importPathIndex], "/") == "github.com" || len(fileImportPathSplit) == importPathIndex {
 		return protogen.GoImportPath(importPath)
 	}
 
@@ -159,4 +155,21 @@ func getFieldOptionKitFieldType(f *protogen.Field) *kit.FieldType {
 func getFieldOptionKitTag(f *protogen.Field) *kit.StructTag {
 	option := getFieldOptions(f).Get(kit.E_Tag.TypeDescriptor())
 	return kit.E_Tag.InterfaceOf(option).(*kit.StructTag)
+}
+func getFieldOptionValidator(f *protogen.Field) string {
+	option := getFieldOptions(f).Get(validator.E_Rule.TypeDescriptor())
+	return validator.E_Rule.InterfaceOf(option).(string)
+}
+
+func getMethodOptions(m *protogen.Method) protoreflect.Message {
+	return m.Desc.Options().ProtoReflect()
+}
+
+func getMethodOptionMuxRouter(m *protogen.Method) *mux.Router {
+	option := getMethodOptions(m).Get(mux.E_Router.TypeDescriptor())
+	return mux.E_Router.InterfaceOf(option).(*mux.Router)
+}
+func getMethodOptionSwagger(m *protogen.Method) *swagger.Swagger {
+	option := getMethodOptions(m).Get(swagger.E_Swagger.TypeDescriptor())
+	return swagger.E_Swagger.InterfaceOf(option).(*swagger.Swagger)
 }

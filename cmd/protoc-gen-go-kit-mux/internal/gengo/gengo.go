@@ -5,7 +5,7 @@ import (
 
 	"github.com/x64fun/terra/cmd/protoc-gen-go-kit-mux/internal/version"
 	"github.com/x64fun/terra/internal/tool"
-	"github.com/x64fun/terra/pkg/protofile/kit"
+	"github.com/x64fun/terra/pkg/protofile/swagger"
 
 	"github.com/google/uuid"
 	"google.golang.org/genproto/googleapis/api/annotations"
@@ -218,8 +218,8 @@ func genMethod(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedF
 	methodOptions := method.Desc.Options()
 	httpRuleAnnotations := methodOptions.ProtoReflect().Get(annotations.E_Http.TypeDescriptor())
 	httpRule := annotations.E_Http.InterfaceOf(httpRuleAnnotations).(*annotations.HttpRule)
-	swaggerAnnotations := methodOptions.ProtoReflect().Get(kit.E_Swagger.TypeDescriptor())
-	swagger := kit.E_Swagger.InterfaceOf(swaggerAnnotations).(*kit.Swagger)
+	swaggerAnnotations := methodOptions.ProtoReflect().Get(swagger.E_Swagger.TypeDescriptor())
+	swagger := swagger.E_Swagger.InterfaceOf(swaggerAnnotations).(*swagger.Swagger)
 	if httpRule != nil {
 		if methodOptions.(*descriptorpb.MethodOptions).GetDeprecated() {
 			g.P(deprecationComment)

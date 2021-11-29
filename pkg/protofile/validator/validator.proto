@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package go.playground.validator;
+
+option go_package = "github.com/x64fun/terra/pkg/protofile/validator";
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+    string rule = 82295900;
+}

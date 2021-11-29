@@ -11,6 +11,9 @@ import (
 // GenerateFile generates the contents of a _kit.pb.go file.
 func (gen Generator) GenerateFile(file *protogen.File) *protogen.GeneratedFile {
 	filename := filepath.Join("terra", file.GeneratedFilenamePrefix+"_kit.go")
+	if len(file.Services) == 0 {
+		return nil
+	}
 	g := gen.NewGeneratedFile(filename, file.GoImportPath)
 	generateFileHeader(g, gen.Plugin, file)
 	gen.generateFileContent(file, g)
@@ -19,9 +22,6 @@ func (gen Generator) GenerateFile(file *protogen.File) *protogen.GeneratedFile {
 
 // generateFileContent generates the go-kit definitions, excluding the package statement.
 func (gen Generator) generateFileContent(file *protogen.File, g *protogen.GeneratedFile) {
-	if len(file.Services) == 0 {
-		return
-	}
 	g.P("// This is a compile-time assertion to ensure that this generated file")
 	g.P("// is compatible with the go-kit package it is being compiled against.")
 	g.P("// Requires go-kit v0.12.0.")
@@ -57,7 +57,7 @@ func (gen Generator) genKitClient(file *protogen.File, g *protogen.GeneratedFile
 				g.P(deprecationComment)
 			}
 			g.P(method.Comments.Leading,
-				clientSignature(g, method))
+				clientSignature(g, file, method))
 		}
 	}
 	g.P("}")
@@ -109,7 +109,7 @@ func (gen Generator) genKitServer(file *protogen.File, g *protogen.GeneratedFile
 				g.P(deprecationComment)
 			}
 			g.P(method.Comments.Leading,
-				serverSignature(g, method))
+				serverSignature(g, file, method))
 		}
 	}
 	if gen.requireUnimplemented {
@@ -125,7 +125,7 @@ func (gen Generator) genKitServer(file *protogen.File, g *protogen.GeneratedFile
 	g.P()
 	for _, method := range service.Methods {
 		if !method.Desc.IsStreamingServer() && !method.Desc.IsStreamingClient() {
-			g.P("func (Unimplemented", serverName, ") ", serverSignature(g, method), "{")
+			g.P("func (Unimplemented", serverName, ") ", serverSignature(g, file, method), "{")
 			g.P("return nil, ", errorsPackage.Ident("New"), `("method `, method.GoName, ` not implemented")`)
 			g.P("}")
 		}
@@ -169,7 +169,11 @@ func (gen Generator) genKitEndpointSet(file *protogen.File, g *protogen.Generate
 	for _, method := range service.Methods {
 		if !method.Desc.IsStreamingServer() && !method.Desc.IsStreamingClient() {
 			g.P("set.", method.GoName, "Endpoint = func(ctx ", contextPackage.Ident("Context"), ", request interface{}) (response interface{}, err error) {")
-			g.P("return srv.", method.GoName, "(ctx, request.(*", method.Input.GoIdent, "))")
+			inputGoIdent := protogen.GoIdent{
+				GoName:       method.Input.GoIdent.GoName,
+				GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Input.GoIdent.GoImportPath.String()),
+			}
+			g.P("return srv.", method.GoName, "(ctx, request.(*", inputGoIdent, "))")
 			g.P("}")
 		}
 	}
@@ -301,20 +305,40 @@ func (gen Generator) genKitClientMethod(file *protogen.File, g *protogen.Generat
 	if method.Desc.Options().(*descriptorpb.MethodOptions).GetDeprecated() {
 		g.P(deprecationComment)
 	}
-	g.P("func (c *", unexport(service.GoName), "Client) ", clientSignature(g, method), "{")
+	g.P("func (c *", unexport(service.GoName), "Client) ", clientSignature(g, file, method), "{")
 	g.P("var response interface{}")
 	g.P("response, err = c.s." + method.GoName + "Endpoint(ctx, in)")
 	g.P("if err != nil { return }")
-	g.P("out = response.(*", method.Output.GoIdent, ")")
+	outputGoIdent := protogen.GoIdent{
+		GoName:       method.Output.GoIdent.GoName,
+		GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Output.GoIdent.GoImportPath.String()),
+	}
+	g.P("out = response.(*", outputGoIdent, ")")
 	g.P("return")
 	g.P("}")
 	g.P()
 }
 
-func clientSignature(g *protogen.GeneratedFile, method *protogen.Method) string {
-	return method.GoName + "(ctx " + g.QualifiedGoIdent(contextPackage.Ident("Context")) + ", in *" + g.QualifiedGoIdent(method.Input.GoIdent) + ") (out *" + g.QualifiedGoIdent(method.Output.GoIdent) + ", err error)"
+func clientSignature(g *protogen.GeneratedFile, file *protogen.File, method *protogen.Method) string {
+	inputGoIdent := protogen.GoIdent{
+		GoName:       method.Input.GoIdent.GoName,
+		GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Input.GoIdent.GoImportPath.String()),
+	}
+	outputGoIdent := protogen.GoIdent{
+		GoName:       method.Output.GoIdent.GoName,
+		GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Output.GoIdent.GoImportPath.String()),
+	}
+	return method.GoName + "(ctx " + g.QualifiedGoIdent(contextPackage.Ident("Context")) + ", in *" + g.QualifiedGoIdent(inputGoIdent) + ") (out *" + g.QualifiedGoIdent(outputGoIdent) + ", err error)"
 }
-func serverSignature(g *protogen.GeneratedFile, method *protogen.Method) string {
-	return method.GoName + "(" + g.QualifiedGoIdent(contextPackage.Ident("Context")) + ", *" + g.QualifiedGoIdent(method.Input.GoIdent) + ") (*" + g.QualifiedGoIdent(method.Output.GoIdent) + ", error)"
+func serverSignature(g *protogen.GeneratedFile, file *protogen.File, method *protogen.Method) string {
+	inputGoIdent := protogen.GoIdent{
+		GoName:       method.Input.GoIdent.GoName,
+		GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Input.GoIdent.GoImportPath.String()),
+	}
+	outputGoIdent := protogen.GoIdent{
+		GoName:       method.Output.GoIdent.GoName,
+		GoImportPath: getCurrentImportPath(file.GoImportPath.String(), file.GeneratedFilenamePrefix, method.Output.GoIdent.GoImportPath.String()),
+	}
+	return method.GoName + "(" + g.QualifiedGoIdent(contextPackage.Ident("Context")) + ", *" + g.QualifiedGoIdent(inputGoIdent) + ") (*" + g.QualifiedGoIdent(outputGoIdent) + ", error)"
 }
 func unexport(s string) string { return strings.ToLower(s[:1]) + s[1:] }

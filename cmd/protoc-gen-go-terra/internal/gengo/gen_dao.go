@@ -90,10 +90,15 @@ func (gen Generator) generateDAOPostgresMessage(g *protogen.GeneratedFile, f *pr
 			for _, field := range m.Fields {
 				_dbField := getFieldOptionSqlxDBField(field)
 				if _dbField != nil {
+					flag := false
 					for _, _replaceKey := range _dbField.GetReplace() {
 						if replaceKey == _replaceKey {
-							g.P("postgres", m.GoIdent.GoName, "TableColumn", field.GoName, ` + " = EXCLUDED." + postgres`, m.GoIdent.GoName, "TableColumn", field.GoName, ",")
+							flag = true
+							break
 						}
+					}
+					if flag {
+						g.P("postgres", m.GoIdent.GoName, "TableColumn", field.GoName, ` + " = EXCLUDED." + postgres`, m.GoIdent.GoName, "TableColumn", field.GoName, ",")
 					}
 				}
 			}
@@ -104,10 +109,15 @@ func (gen Generator) generateDAOPostgresMessage(g *protogen.GeneratedFile, f *pr
 			for _, field := range m.Fields {
 				_dbField := getFieldOptionSqlxDBField(field)
 				if _dbField != nil {
+					flag := false
 					for _, _replaceKey := range _dbField.GetReplace() {
 						if replaceKey == _replaceKey {
-							g.P(`postgres`, m.GoIdent.GoName, `TableColumn`, field.GoName, ` + ", " +`)
+							flag = true
+							break
 						}
+					}
+					if flag {
+						g.P(`postgres`, m.GoIdent.GoName, `TableColumn`, field.GoName, ` + ", " +`)
 					}
 				}
 			}
@@ -117,10 +127,15 @@ func (gen Generator) generateDAOPostgresMessage(g *protogen.GeneratedFile, f *pr
 			for _, field := range m.Fields {
 				_dbField := getFieldOptionSqlxDBField(field)
 				if _dbField != nil {
+					flag := false
 					for _, _replaceKey := range _dbField.GetReplace() {
 						if replaceKey == _replaceKey {
-							g.P(m.GoIdent.GoName, `Field`, field.GoName, `NamedMapping + ", " +`)
+							flag = true
+							break
 						}
+					}
+					if flag {
+						g.P(m.GoIdent.GoName, `Field`, field.GoName, `NamedMapping + ", " +`)
 					}
 				}
 			}
@@ -196,7 +211,7 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 					g.P(`whereList = append(whereList, q)`)
 					g.P(`whereDataList = append(whereDataList, a...)`)
 					g.P(`}`)
-					g.P(`whereList = append(whereList, `, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL")`)
+					g.P(`whereList = append(whereList, "(" + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL OR " + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " = 0)")`)
 					g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, structName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE " + strings.Join(whereList, " AND ")`)
 					g.P(`query = tx.Rebind(query)`)
 					g.P(`err = tx.SelectContext(ctx, &tmpList, query, whereDataList...)`)
@@ -216,7 +231,7 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 					g.P(`whereList = append(whereList, `, structName, `TableColumn`, k, `[tx.DriverName()] + " = ?")`)
 					g.P(`whereDataList = append(whereDataList, `, camel(k), `)`)
 				}
-				g.P(`whereList = append(whereList, `, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL")`)
+				g.P(`whereList = append(whereList, "(" + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL OR " + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " = 0)")`)
 				g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, structName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE " + strings.Join(whereList, " AND ")`)
 				g.P(`query = tx.Rebind(query)`)
 				g.P(`err = tx.SelectContext(ctx, &list, query, whereDataList...)`)
@@ -246,7 +261,7 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 					g.P(`whereList = append(whereList, q)`)
 					g.P(`whereDataList = append(whereDataList, a...)`)
 					g.P(`}`)
-					g.P(`whereList = append(whereList, `, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL")`)
+					g.P(`whereList = append(whereList, "("+`, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL OR " + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " = 0)")`)
 					g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, structName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE " + strings.Join(whereList, " AND ")`)
 					g.P(`query = tx.Rebind(query)`)
 					g.P(`err = tx.SelectContext(ctx, &tmpList, query, whereDataList...)`)
@@ -266,7 +281,7 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 		g.P(`) (list []*`, m.GoIdent.GoName, `, err error) {`)
 		g.P(`if len(columns) == 0 { return }`)
 		g.P(`list = make([]*`, m.GoIdent.GoName, `, 0)`)
-		g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, m.GoIdent.GoName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE " + `, m.GoIdent.GoName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL"`)
+		g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, m.GoIdent.GoName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE (" + `, m.GoIdent.GoName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL OR " + `, m.GoIdent.GoName, `TableColumnDeletedAt[tx.DriverName()] + " = 0)"`)
 		g.P(`if order != nil {`)
 		g.P(`query += " ORDER BY " + order.Field + " " + string(order.Direction)`)
 		g.P(`}`)
@@ -286,14 +301,14 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 		g.P(`whereDataList := []interface{}{}`)
 		g.P(`query := "SELECT COUNT(" + `, m.GoIdent.GoName, `TableColumnID[tx.DriverName()] + ") FROM " + `, m.GoIdent.GoName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX)`)
 		g.P(`if where != nil {`)
-		g.P(`var query string`)
-		g.P(`var args []interface{}`)
-		g.P(`query, args, err = Generate`, m.GoIdent.GoName, `WhereSQL(tx.DriverName(), where)`)
+		g.P(`var q string`)
+		g.P(`var a []interface{}`)
+		g.P(`q, a, err = Generate`, m.GoIdent.GoName, `WhereSQL(tx.DriverName(), where)`)
 		g.P(`if err != nil {`)
 		g.P(`return`)
 		g.P(`}`)
-		g.P(`query += " WHERE " + query`)
-		g.P(`whereDataList = append(whereDataList, args...)`)
+		g.P(`query += " WHERE " + q`)
+		g.P(`whereDataList = append(whereDataList, a...)`)
 		g.P(`}`)
 		g.P(`err = tx.GetContext(ctx, &count, tx.Rebind(query), whereDataList...)`)
 		g.P(`if err != nil {`)
@@ -315,14 +330,14 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 		g.P(`whereDataList := []interface{}{}`)
 		g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, m.GoIdent.GoName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX)`)
 		g.P(`if where != nil {`)
-		g.P(`var query string`)
-		g.P(`var args []interface{}`)
-		g.P(`query, args, err = Generate`, m.GoIdent.GoName, `WhereSQL(tx.DriverName(), where)`)
+		g.P(`var q string`)
+		g.P(`var a []interface{}`)
+		g.P(`q, a, err = Generate`, m.GoIdent.GoName, `WhereSQL(tx.DriverName(), where)`)
 		g.P(`if err != nil {`)
 		g.P(`return`)
 		g.P(`}`)
-		g.P(`query += " WHERE " + query`)
-		g.P(`whereDataList = append(whereDataList, args...)`)
+		g.P(`query += " WHERE " + q`)
+		g.P(`whereDataList = append(whereDataList, a...)`)
 		g.P(`}`)
 		g.P(`if order != nil {`)
 		g.P(`query += " ORDER BY " + order.Field + " " + string(order.Direction)`)
@@ -745,12 +760,12 @@ func (gen Generator) generateDAOUpdate(g *protogen.GeneratedFile, f *protogen.Fi
 			g.P(`if len(tmp) == 0 { return }`)
 			g.P(`list = tmp`)
 			g.P(`for index := range list {`)
-			g.P(`list[index].UpdatedAt = `, sqlPackage.Ident("NullInt64"), `{ Int64: `, timePackage.Ident("Now().Unix()"), `, Valid: true }`)
+			g.P(`list[index].UpdatedAt = `, timePackage.Ident("Now().Unix()"))
 			g.P(`}`)
 		} else {
 			g.P(`if tmp == nil { return }`)
 			g.P(`data = tmp`)
-			g.P(`data.UpdatedAt = `, sqlPackage.Ident("NullInt64"), `{ Int64: `, timePackage.Ident("Now().Unix()"), `, Valid: true }`)
+			g.P(`data.UpdatedAt = `, timePackage.Ident("Now().Unix()"))
 		}
 		g.P(`updateList := []string{`)
 		for _, field := range m.Fields {
@@ -811,11 +826,11 @@ func (gen Generator) generateDAODelete(g *protogen.GeneratedFile, f *protogen.Fi
 		if batch {
 			g.P(`if len(tmp) == 0 { return }`)
 			g.P(`for index := range tmp {`)
-			g.P(`tmp[index].UpdatedAt = `, sqlPackage.Ident("NullInt64"), `{ Int64: `, timePackage.Ident("Now().Unix()"), `, Valid: true }`)
+			g.P(`tmp[index].DeletedAt = `, timePackage.Ident("Now().Unix()"))
 			g.P(`}`)
 		} else {
 			g.P(`if tmp == nil { return }`)
-			g.P(`tmp.DeletedAt = sql.NullInt64{Int64: `, timePackage.Ident("Now().Unix()"), `, Valid: true}`)
+			g.P(`tmp.DeletedAt = `, timePackage.Ident("Now().Unix()"))
 		}
 		g.P(`whereList := []string{`)
 		for _, k := range strings.Split(key, "And") {
@@ -952,7 +967,9 @@ func (gen Generator) generateDAOSelect(
 		out += "*" + structName
 		switch selectType {
 		case "one":
-			out += ", exist bool"
+			if !flag {
+				out += ", exist bool"
+			}
 		case "list":
 
 		}
