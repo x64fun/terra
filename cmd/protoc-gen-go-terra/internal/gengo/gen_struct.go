@@ -33,7 +33,6 @@ func (gen Generator) generateMessage(g *protogen.GeneratedFile, f *protogen.File
 		_tag := getFieldOptionKitTag(field)
 		_dbField := getFieldOptionSqlxDBField(field)
 		_validatorRule := getFieldOptionValidator(field)
-		gen.l.Info(_validatorRule)
 		var printArgs []interface{}
 		printArgs = append(printArgs, field.GoName, " ")
 		if _type != nil {
@@ -88,6 +87,9 @@ func (gen Generator) generateMessage(g *protogen.GeneratedFile, f *protogen.File
 		} else {
 			printTag = append(printTag, `json:"`+field.Desc.JSONName()+`,omitempty"`)
 			printTag = append(printTag, `xml:"`+field.Desc.JSONName()+`,omitempty"`)
+		}
+		if _validatorRule != "" {
+			printTag = append(printTag, `validate:"`+_validatorRule+`"`)
 		}
 		printArgs = append(printArgs, "`")
 		printArgs = append(printArgs, strings.Join(printTag, " "))
