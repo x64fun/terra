@@ -187,6 +187,7 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 					g.P(`whereList = append(whereList, `, structName, `TableColumn`, k, `[tx.DriverName()] + " = ?")`)
 					g.P(`whereDataList = append(whereDataList, `, camel(k), `)`)
 				}
+				g.P(`whereList = append(whereList, "("+`, structName, `TableColumnDeletedAt[tx.DriverName()] + " IS NULL OR " + `, structName, `TableColumnDeletedAt[tx.DriverName()] + " = 0)")`)
 				g.P(`query := "SELECT " + strings.Join(columns, ", ") + " FROM " + `, m.GoIdent.GoName, `TableName[tx.DriverName()](DEFAULT_TABLE_PREFIX) + " WHERE " + strings.Join(whereList, " AND ") + " LIMIT 1"`)
 				g.P(`query = tx.Rebind(query)`)
 			})
@@ -346,10 +347,10 @@ func (gen Generator) generateDAOMessage(g *protogen.GeneratedFile, f *protogen.F
 		g.P(`count := pageSize`)
 		g.P(`if count != 0 {`)
 		g.P(`query += " LIMIT "`)
-		g.P(`if offset != 0 {`)
-		g.P(`query += `, strconvPackage.Ident("FormatInt(offset, 10)"), ` + ", "`)
-		g.P(`}`)
 		g.P(`query += `, strconvPackage.Ident("FormatInt(count, 10)"))
+		g.P(`if offset != 0 {`)
+		g.P(`query += " OFFSET " + `, strconvPackage.Ident("FormatInt(offset, 10)"))
+		g.P(`}`)
 		g.P(`}`)
 		g.P(`total, err = Get`, m.GoIdent.GoName, `Count(ctx, tx, where)`)
 		g.P(`if err != nil {`)
@@ -638,6 +639,10 @@ func (gen Generator) generateDAOWhere(g *protogen.GeneratedFile, f *protogen.Fil
 				g.P(`whereList = append(whereList, `, structName, `TableColumn`, fieldName, `[driverName] + " = ?")`)
 				g.P(`whereDataList = append(whereDataList, *w.`, fieldName, `)`)
 				g.P(`}`)
+				g.P(`if w.`, fieldName, `NEQ != nil {`)
+				g.P(`whereList = append(whereList, `, structName, `TableColumn`, fieldName, `[driverName] + " != ?")`)
+				g.P(`whereDataList = append(whereDataList, *w.`, fieldName, `NEQ)`)
+				g.P(`}`)
 				if fieldType != "bool" {
 					g.P(`if w.`, fieldName, `In != nil {`)
 					g.P(`query, args, err := `, sqlxPackage.Ident("In"), `(`, structName, `TableColumn`, fieldName, `[driverName] + " IN (?)", *w.`, fieldName, `In)`)
@@ -815,6 +820,11 @@ func (gen Generator) generateDAOReplace(g *protogen.GeneratedFile, f *protogen.F
 }
 func (gen Generator) generateDAODelete(g *protogen.GeneratedFile, f *protogen.File, m *protogen.Message, key string) {
 	gen.generateDAOOperate(g, m, "Delete", key, func(g *protogen.GeneratedFile, batch bool, structName, key string) {
+		if batch {
+			g.P(`if len(tmp) == 0 { return }`)
+		} else {
+			g.P(`if tmp == nil { return }`)
+		}
 		g.P(`whereList := []string{`)
 		for _, k := range strings.Split(key, "And") {
 			g.P(structName, `TableColumn`, k, `[tx.DriverName()] + " = " + `, structName, `Field`, k, `NamedMapping,`)
